@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🌾 FarmGame</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --sky: #7EC8E3;
+    --grass: #5DAA4B;
+    --grass-dark: #3D8A35;
+    --soil: #8B5E3C;
+    --soil-light: #A67C52;
+    --gold: #F5C842;
+    --gold-dark: #D4A017;
+    --panel: rgba(255,255,255,0.92);
+    --text: #2C1810;
+    --green-btn: #4CAF50;
+    --red-btn: #E05252;
+    --blue-btn: #4A90D9;
+  }
+
+  body {
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    background: linear-gradient(180deg, var(--sky) 0%, #B8E4F5 40%, var(--grass) 40%, var(--grass-dark) 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: var(--text);
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(8px);
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-coin {
+    background: var(--gold);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #5a3a00;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .topbar-level {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+  }
+  .xp-bar-wrap { width: 90px; background: rgba(255,255,255,0.25); border-radius: 10px; height: 6px; }
+  .xp-bar { background: var(--gold); border-radius: 10px; height: 6px; transition: width 0.4s; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(6px);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.65);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+  }
+  .tab.active { color: white; border-bottom-color: var(--gold); }
+  .tab-icon { font-size: 20px; display: block; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; padding: 12px; }
+  .screen.active { display: block; }
+
+  /* ── FIELD ── */
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .plot {
+    background: var(--soil);
+    border-radius: 14px;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 0 var(--soil-light), 0 6px 12px rgba(0,0,0,0.25);
+    position: relative;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.1);
+  }
+  .plot:active { transform: scale(0.94); box-shadow: 0 2px 0 var(--soil-light); }
+  .plot.ready { background: #6B9E3A; box-shadow: 0 4px 0 #4a7a28, 0 6px 12px rgba(0,0,0,0.2); animation: pulse-ready 1.5s infinite; }
+  .plot.growing { background: #7B6E3C; box-shadow: 0 4px 0 #5a5028; }
+  .plot.empty { background: var(--soil); }
+  .plot-emoji { font-size: 32px; line-height: 1; }
+  .plot-label { font-size: 10px; color: rgba(255,255,255,0.85); font-weight: 600; margin-top: 4px; text-align: center; padding: 0 4px; }
+  .plot-timer { font-size: 9px; color: rgba(255,255,255,0.7); }
+  .plot-add { font-size: 28px; color: rgba(255,255,255,0.4); }
+
+  @keyframes pulse-ready {
+    0%,100% { box-shadow: 0 4px 0 #4a7a28, 0 0 0 0 rgba(107,158,58,0.4); }
+    50% { box-shadow: 0 4px 0 #4a7a28, 0 0 0 8px rgba(107,158,58,0); }
+  }
+
+  .buy-plot-btn {
+    width: 100%;
+    background: var(--gold);
+    color: #5a3a00;
+    border: none;
+    border-radius: 14px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--gold-dark);
+    transition: all 0.15s;
+  }
+  .buy-plot-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--gold-dark); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px 16px 32px;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 4px; margin: 0 auto 16px; }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+
+  .crop-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    background: #f5f5f5;
+    transition: background 0.15s;
+  }
+  .crop-item:active { background: #e8e8e8; }
+  .crop-item.locked { opacity: 0.45; cursor: not-allowed; }
+  .crop-emoji { font-size: 30px; }
+  .crop-info { flex: 1; }
+  .crop-name { font-weight: 700; font-size: 15px; }
+  .crop-stats { font-size: 12px; color: #888; margin-top: 2px; }
+  .crop-price {
+    background: var(--gold);
+    color: #5a3a00;
+    border-radius: 10px;
+    padding: 5px 10px;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  /* ── ANIMALS ── */
+  .animal-card {
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+  }
+  .animal-emoji { font-size: 40px; }
+  .animal-info { flex: 1; }
+  .animal-name { font-weight: 700; font-size: 16px; }
+  .animal-count { font-size: 13px; color: #666; }
+  .animal-timer { font-size: 12px; color: #999; margin-top: 3px; }
+  .collect-btn {
+    background: var(--green-btn);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #388E3C;
+    transition: all 0.15s;
+  }
+  .collect-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #388E3C; }
+  .collect-btn:disabled { background: #ccc; box-shadow: 0 3px 0 #aaa; cursor: not-allowed; }
+  .no-animals {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+    font-size: 15px;
+  }
+  .no-animals-emoji { font-size: 50px; display: block; margin-bottom: 10px; }
+
+  /* ── SHOP ── */
+  .shop-section { margin-bottom: 20px; }
+  .shop-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+  .shop-item {
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  .shop-emoji { font-size: 34px; }
+  .shop-info { flex: 1; }
+  .shop-name { font-weight: 700; font-size: 15px; }
+  .shop-desc { font-size: 12px; color: #888; margin-top: 2px; }
+  .shop-buy-btn {
+    background: var(--blue-btn);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 9px 14px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #2c6fad;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .shop-buy-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #2c6fad; }
+
+  .sell-all-btn {
+    width: 100%;
+    background: #E05252;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #b03a3a;
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+  .sell-all-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b03a3a; }
+
+  /* ── INVENTORY ── */
+  .inv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .inv-item {
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 14px 8px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .inv-emoji { font-size: 28px; }
+  .inv-qty { font-weight: 700; font-size: 16px; margin-top: 4px; }
+  .inv-name { font-size: 10px; color: #888; margin-top: 2px; }
+  .inv-worth { font-size: 10px; color: var(--gold-dark); font-weight: 600; }
+  .inv-empty { text-align: center; padding: 50px 20px; color: #aaa; font-size: 15px; }
+
+  /* ── PROFILE ── */
+  .profile-card {
+    background: var(--panel);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .profile-avatar { font-size: 60px; margin-bottom: 8px; }
+  .profile-name { font-size: 20px; font-weight: 700; }
+  .profile-level { font-size: 14px; color: #888; margin-top: 4px; }
+  .xp-bar-big-wrap { background: #eee; border-radius: 10px; height: 10px; margin: 10px 0; }
+  .xp-bar-big { background: linear-gradient(90deg, var(--gold), var(--gold-dark)); border-radius: 10px; height: 10px; transition: width 0.5s; }
+  .xp-label { font-size: 12px; color: #aaa; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .stat-val { font-size: 22px; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 11px; color: #999; margin-top: 4px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(30,30,30,0.92);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 999;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    text-align: center;
+    max-width: 85vw;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-coin">🪙 <span id="coins">150</span></div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="xp-bar-wrap"><div class="xp-bar" id="xpBar" style="width:0%"></div></div>
+    <div class="topbar-level">⭐ <span id="levelTop">1</span></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('field')"><span class="tab-icon">🌾</span>Ферма</div>
+  <div class="tab" onclick="switchTab('animals')"><span class="tab-icon">🐄</span>Животные</div>
+  <div class="tab" onclick="switchTab('shop')"><span class="tab-icon">🏪</span>Магазин</div>
+  <div class="tab" onclick="switchTab('inventory')"><span class="tab-icon">🎒</span>Склад</div>
+  <div class="tab" onclick="switchTab('profile')"><span class="tab-icon">👤</span>Профиль</div>
+</div>
+
+<!-- FIELD SCREEN -->
+<div class="screen active" id="screen-field">
+  <p class="section-title" style="margin-top:10px;">Твои поля</p>
+  <div class="field-grid" id="fieldGrid"></div>
+  <button class="buy-plot-btn" onclick="buyPlot()">➕ Купить участок</button>
+</div>
+
+<!-- ANIMALS SCREEN -->
+<div class="screen" id="screen-animals">
+  <p class="section-title" style="margin-top:10px;">Твои животные</p>
+  <div id="animalsList"></div>
+</div>
+
+<!-- SHOP SCREEN -->
+<div class="screen" id="screen-shop">
+  <div class="shop-section" style="margin-top:10px;">
+    <div class="shop-section-title">🐾 Животные</div>
+    <div id="shopAnimalsList"></div>
+  </div>
+  <div class="shop-section">
+    <div class="shop-section-title">💰 Продать</div>
+    <button class="sell-all-btn" onclick="sellAll()">💰 Продать весь урожай и продукты</button>
+  </div>
+</div>
+
+<!-- INVENTORY SCREEN -->
+<div class="screen" id="screen-inventory">
+  <p class="section-title" style="margin-top:10px;">Склад</p>
+  <div class="inv-grid" id="invGrid"></div>
+</div>
+
+<!-- PROFILE SCREEN -->
+<div class="screen" id="screen-profile">
+  <div class="profile-card" style="margin-top:10px;">
+    <div class="profile-avatar">🧑‍🌾</div>
+    <div class="profile-name" id="profileName">Фермер</div>
+    <div class="profile-level">Уровень <span id="profileLevel">1</span></div>
+    <div class="xp-bar-big-wrap"><div class="xp-bar-big" id="xpBarBig" style="width:0%"></div></div>
+    <div class="xp-label" id="xpLabel">0 / 100 опыта</div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="statCoins">0</div><div class="stat-label">Монет сейчас</div></div>
+    <div class="stat-card"><div class="stat-val" id="statHarvested">0</div><div class="stat-label">Собрано урожая</div></div>
+    <div class="stat-card"><div class="stat-val" id="statEarned">0</div><div class="stat-label">Всего заработано</div></div>
+    <div class="stat-card"><div class="stat-val" id="statPlots">0</div><div class="stat-label">Участков</div></div>
+  </div>
+</div>
+
+<!-- PLANT MODAL -->
+<div class="modal-overlay" id="plantModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🌱 Что посадить?</div>
+    <div id="cropList"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── GAME DATA ─────────────────────────────────────────────────────────────
+const CROPS = {
+  wheat:  { name:"Пшеница",   emoji:"🌾", buy:10,  sell:25,  grow:60,  lvl:1 },
+  carrot: { name:"Морковь",   emoji:"🥕", buy:20,  sell:55,  grow:120, lvl:1 },
+  potato: { name:"Картофель", emoji:"🥔", buy:30,  sell:90,  grow:180, lvl:2 },
+  corn:   { name:"Кукуруза",  emoji:"🌽", buy:50,  sell:160, grow:300, lvl:3 },
+  tomato: { name:"Помидор",   emoji:"🍅", buy:80,  sell:250, grow:480, lvl:4 },
+};
+
+const ANIMALS = {
+  chicken: { name:"Курица", emoji:"🐔", buy:200, product:"egg",  pname:"Яйцо",   pemoji:"🥚", psell:30,  interval:300 },
+  cow:     { name:"Корова", emoji:"🐄", buy:800, product:"milk", pname:"Молоко", pemoji:"🥛", psell:100, interval:600 },
+  pig:     { name:"Свинья", emoji:"🐷", buy:500, product:"meat", pname:"Мясо",   pemoji:"🥩", psell:150, interval:900 },
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+const SAVE_KEY = "farmgame_v1";
+
+function defaultState() {
+  return {
+    coins: 150, level: 1, xp: 0,
+    plots: Array(3).fill(null).map(() => ({ crop: null, plantedAt: null })),
+    animals: {},
+    inventory: {},
+    stats: { harvested: 0, totalEarned: 0 }
+  };
+}
+
+let state = (() => {
+  try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || defaultState(); }
+  catch { return defaultState(); }
+})();
+
+function save() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function ts() { return Math.floor(Date.now() / 1000); }
+
+function addXp(amount) {
+  state.xp += amount;
+  const req = state.level * 100;
+  if (state.xp >= req) {
+    state.xp -= req;
+    state.level++;
+    showToast(`🎉 Уровень ${state.level}! Поздравляем!`);
+  }
+}
+
+function fmtTime(s) {
+  if (s <= 0) return "Готово!";
+  if (s < 60) return `${s}с`;
+  if (s < 3600) return `${Math.floor(s/60)}м ${s%60}с`;
+  return `${Math.floor(s/3600)}ч ${Math.floor((s%3600)/60)}м`;
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function updateTopBar() {
+  document.getElementById("coins").textContent = state.coins;
+  document.getElementById("levelTop").textContent = state.level;
+  const pct = Math.min(100, (state.xp / (state.level * 100)) * 100);
+  document.getElementById("xpBar").style.width = pct + "%";
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
+  const idx = ["field","animals","shop","inventory","profile"].indexOf(name);
+  document.querySelectorAll(".tab")[idx].classList.add("active");
+  if (name === "field") renderField();
+  if (name === "animals") renderAnimals();
+  if (name === "shop") renderShop();
+  if (name === "inventory") renderInventory();
+  if (name === "profile") renderProfile();
+}
+
+// ─── FIELD ────────────────────────────────────────────────────────────────
+let selectedPlot = null;
+
+function renderField() {
+  const grid = document.getElementById("fieldGrid");
+  grid.innerHTML = "";
+  state.plots.forEach((plot, i) => {
+    const div = document.createElement("div");
+    div.className = "plot";
+    if (plot.crop === null) {
+      div.classList.add("empty");
+      div.innerHTML = `<span class="plot-add">＋</span><span class="plot-label">Пусто</span>`;
+      div.onclick = () => openPlantModal(i);
+    } else {
+      const crop = CROPS[plot.crop];
+      const elapsed = ts() - plot.plantedAt;
+      const done = elapsed >= crop.grow;
+      const left = Math.max(0, crop.grow - elapsed);
+      if (done) {
+        div.classList.add("ready");
+        div.innerHTML = `<span class="plot-emoji">${crop.emoji}</span><span class="plot-label">Собрать!</span>`;
+        div.onclick = () => harvest(i);
+      } else {
+        div.classList.add("growing");
+        div.innerHTML = `<span class="plot-emoji">${crop.emoji}</span><span class="plot-label">${crop.name}</span><span class="plot-timer">${fmtTime(left)}</span>`;
+        div.onclick = () => showToast(`⏳ ${crop.name} готово через ${fmtTime(left)}`);
+      }
+    }
+    grid.appendChild(div);
+  });
+  updateTopBar();
+}
+
+function openPlantModal(idx) {
+  selectedPlot = idx;
+  const list = document.getElementById("cropList");
+  list.innerHTML = "";
+  Object.entries(CROPS).forEach(([key, c]) => {
+    const locked = state.level < c.lvl;
+    const div = document.createElement("div");
+    div.className = "crop-item" + (locked ? " locked" : "");
+    div.innerHTML = `
+      <span class="crop-emoji">${c.emoji}</span>
+      <div class="crop-info">
+        <div class="crop-name">${locked ? "🔒 " : ""}${c.name}</div>
+        <div class="crop-stats">Растёт ${fmtTime(c.grow)} · Продажа ${c.sell}🪙${locked ? ` · Ур.${c.lvl}` : ""}</div>
+      </div>
+      <span class="crop-price">${c.buy}🪙</span>`;
+    if (!locked) div.onclick = () => plantCrop(key, c);
+    list.appendChild(div);
+  });
+  document.getElementById("plantModal").classList.add("open");
+}
+
+function closeModal(e) {
+  if (e.target.classList.contains("modal-overlay")) {
+    document.getElementById("plantModal").classList.remove("open");
+  }
+}
+
+function plantCrop(key, crop) {
+  if (state.coins < crop.buy) { showToast(`❌ Нужно ${crop.buy}🪙`); return; }
+  state.coins -= crop.buy;
+  state.plots[selectedPlot] = { crop: key, plantedAt: ts() };
+  document.getElementById("plantModal").classList.remove("open");
+  save();
+  showToast(`🌱 Посадил ${crop.emoji} ${crop.name}!`);
+  renderField();
+}
+
+function harvest(idx) {
+  const plot = state.plots[idx];
+  const crop = CROPS[plot.crop];
+  state.inventory[plot.crop] = (state.inventory[plot.crop] || 0) + 1;
+  state.plots[idx] = { crop: null, plantedAt: null };
+  state.stats.harvested++;
+  addXp(10);
+  save();
+  showToast(`✅ Собрал ${crop.emoji} ${crop.name}! +10 опыта`);
+  renderField();
+}
+
+function buyPlot() {
+  if (state.plots.length >= 12) { showToast("❌ Максимум 12 участков!"); return; }
+  const cost = 100 * state.plots.length;
+  if (state.coins < cost) { showToast(`❌ Нужно ${cost}🪙`); return; }
+  state.coins -= cost;
+  state.plots.push({ crop: null, plantedAt: null });
+  save();
+  showToast(`✅ Новый участок куплен за ${cost}🪙!`);
+  renderField();
+}
+
+// ─── ANIMALS ──────────────────────────────────────────────────────────────
+function renderAnimals() {
+  const list = document.getElementById("animalsList");
+  list.innerHTML = "";
+  const owned = Object.entries(state.animals).filter(([,a]) => a.count > 0);
+  if (owned.length === 0) {
+    list.innerHTML = `<div class="no-animals"><span class="no-animals-emoji">🐾</span>У тебя пока нет животных.<br>Купи их в магазине!</div>`;
+    return;
+  }
+  owned.forEach(([key, entry]) => {
+    const a = ANIMALS[key];
+    const since = ts() - (entry.lastCollected || 0);
+    const ready = since >= a.interval;
+    const left = Math.max(0, a.interval - since);
+    const div = document.createElement("div");
+    div.className = "animal-card";
+    div.innerHTML = `
+      <span class="animal-emoji">${a.emoji}</span>
+      <div class="animal-info">
+        <div class="animal-name">${a.name} x${entry.count}</div>
+        <div class="animal-count">${a.pemoji} ${a.pname} · ${a.psell}🪙 за шт.</div>
+        <div class="animal-timer">${ready ? "✅ Готово к сбору!" : `⏳ ${fmtTime(left)}`}</div>
+      </div>
+      <button class="collect-btn" ${ready ? "" : "disabled"} onclick="collectAnimal('${key}')">${ready ? "Собрать" : fmtTime(left)}</button>`;
+    list.appendChild(div);
+  });
+}
+
+function collectAnimal(key) {
+  const a = ANIMALS[key];
+  const entry = state.animals[key];
+  const since = ts() - (entry.lastCollected || 0);
+  if (since < a.interval) { showToast(`⏳ Ещё рано!`); return; }
+  const count = entry.count;
+  state.inventory[a.product] = (state.inventory[a.product] || 0) + count;
+  state.animals[key].lastCollected = ts();
+  addXp(5 * count);
+  save();
+  showToast(`✅ Собрал ${count}x ${a.pemoji} ${a.pname}!`);
+  renderAnimals();
+  updateTopBar();
+}
+
+// ─── SHOP ─────────────────────────────────────────────────────────────────
+function renderShop() {
+  const list = document.getElementById("shopAnimalsList");
+  list.innerHTML = "";
+  Object.entries(ANIMALS).forEach(([key, a]) => {
+    const owned = state.animals[key]?.count || 0;
+    const div = document.createElement("div");
+    div.className = "shop-item";
+    div.innerHTML = `
+      <span class="shop-emoji">${a.emoji}</span>
+      <div class="shop-info">
+        <div class="shop-name">${a.name} ${owned > 0 ? `(у тебя: ${owned})` : ""}</div>
+        <div class="shop-desc">${a.pemoji} каждые ${fmtTime(a.interval)} · ${a.psell}🪙/шт.</div>
+      </div>
+      <button class="shop-buy-btn" onclick="buyAnimal('${key}')">${a.buy}🪙</button>`;
+    list.appendChild(div);
+  });
+}
+
+function buyAnimal(key) {
+  const a = ANIMALS[key];
+  if (state.coins < a.buy) { showToast(`❌ Нужно ${a.buy}🪙`); return; }
+  state.coins -= a.buy;
+  if (!state.animals[key]) state.animals[key] = { count: 0, lastCollected: 0 };
+  state.animals[key].count++;
+  save();
+  showToast(`✅ Купил ${a.emoji} ${a.name}!`);
+  renderShop();
+  updateTopBar();
+}
+
+function sellAll() {
+  const inv = state.inventory;
+  if (Object.keys(inv).length === 0) { showToast("🎒 Склад пуст!"); return; }
+  const prices = {};
+  Object.entries(CROPS).forEach(([k,c]) => prices[k] = c.sell);
+  Object.entries(ANIMALS).forEach(([,a]) => prices[a.product] = a.psell);
+  let total = 0;
+  Object.entries(inv).forEach(([item, qty]) => total += (prices[item] || 0) * qty);
+  state.inventory = {};
+  state.coins += total;
+  state.stats.totalEarned += total;
+  addXp(Math.floor(total / 10));
+  save();
+  showToast(`💰 Продано! +${total}🪙`);
+  updateTopBar();
+}
+
+// ─── INVENTORY ────────────────────────────────────────────────────────────
+function renderInventory() {
+  const grid = document.getElementById("invGrid");
+  const items = Object.entries(state.inventory).filter(([,q]) => q > 0);
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="inv-empty" style="grid-column:1/-1">🎒<br>Склад пуст</div>`;
+    return;
+  }
+  const names = {};
+  const emojis = {};
+  const prices = {};
+  Object.entries(CROPS).forEach(([k,c]) => { names[k]=c.name; emojis[k]=c.emoji; prices[k]=c.sell; });
+  Object.entries(ANIMALS).forEach(([,a]) => { names[a.product]=a.pname; emojis[a.product]=a.pemoji; prices[a.product]=a.psell; });
+  grid.innerHTML = items.map(([item,qty]) => `
+    <div class="inv-item">
+      <div class="inv-emoji">${emojis[item]||"📦"}</div>
+      <div class="inv-qty">${qty}</div>
+      <div class="inv-name">${names[item]||item}</div>
+      <div class="inv-worth">${(prices[item]||0)*qty}🪙</div>
+    </div>`).join("");
+}
+
+// ─── PROFILE ──────────────────────────────────────────────────────────────
+function renderProfile() {
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  document.getElementById("profileName").textContent = tgUser?.first_name || "Фермер";
+  document.getElementById("profileLevel").textContent = state.level;
+  const pct = Math.min(100, (state.xp / (state.level * 100)) * 100);
+  document.getElementById("xpBarBig").style.width = pct + "%";
+  document.getElementById("xpLabel").textContent = `${state.xp} / ${state.level * 100} опыта`;
+  document.getElementById("statCoins").textContent = state.coins + "🪙";
+  document.getElementById("statHarvested").textContent = state.stats.harvested;
+  document.getElementById("statEarned").textContent = state.stats.totalEarned + "🪙";
+  document.getElementById("statPlots").textContent = state.plots.length;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+try { window.Telegram?.WebApp?.ready(); window.Telegram?.WebApp?.expand(); } catch(e){}
+
+// Auto-update timers every second
+setInterval(() => {
+  const activeScreen = document.querySelector(".screen.active");
+  if (activeScreen?.id === "screen-field") renderField();
+  if (activeScreen?.id === "screen-animals") renderAnimals();
+}, 1000);
+
+renderField();
+updateTopBar();
+</script>
+</body>
+</html>
