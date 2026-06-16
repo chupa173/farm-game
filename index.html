@@ -3,743 +3,777 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🌾 FarmVille</title>
+<title>⛓️ Зона 13</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-:root{
-  --sky1:#87CEEB;--sky2:#FDB97D;
-  --grass:#4a7c3f;--grass2:#3d6834;
-  --soil:#6B4226;--soil2:#8B5A2B;--soil3:#A0522D;
-  --gold:#FFD700;--gold2:#FFA500;
-  --green:#4CAF50;--green2:#388E3C;
-  --blue:#2196F3;--blue2:#1565C0;
-  --red:#F44336;--red2:#C62828;
-  --panel:#fffde7;--panel2:#fff9c4;
-  --text:#3E2723;--text2:#5D4037;
-}
-html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif}
+html,body{height:100%;background:#1a1a2e;font-family:'Segoe UI',system-ui,sans-serif;color:#eee;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh}
 
-/* SKY & SCENE */
-#scene{
-  position:fixed;inset:0;
-  background:linear-gradient(180deg,#87CEEB 0%,#B0E0E6 45%,#90EE90 45%,#4a7c3f 55%,#3d6834 100%);
-}
-.cloud{position:absolute;background:white;border-radius:50px;opacity:0.85;animation:drift linear infinite}
-@keyframes drift{from{transform:translateX(-200px)}to{transform:translateX(110vw)}}
-
-/* MAIN LAYOUT */
-#app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
-
-/* TOP HUD */
+/* HUD */
 #hud{
-  background:linear-gradient(135deg,rgba(0,0,0,0.55),rgba(0,0,0,0.35));
-  backdrop-filter:blur(12px);
-  padding:8px 12px;
-  display:flex;align-items:center;gap:8px;
-  border-bottom:1px solid rgba(255,255,255,0.15);
-  flex-shrink:0;
+  background:linear-gradient(135deg,#16213e,#0f3460);
+  padding:8px 12px;border-bottom:2px solid #e94560;
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
 }
-.hud-coin{
-  background:linear-gradient(135deg,#FFD700,#FFA500);
-  border-radius:20px;padding:6px 14px;
-  font-weight:800;font-size:16px;color:#3E2723;
-  box-shadow:0 2px 8px rgba(255,165,0,0.5);
-  display:flex;align-items:center;gap:5px;
-}
-.hud-xp{flex:1;margin:0 6px}
-.hud-xp-bar{background:rgba(255,255,255,0.2);border-radius:10px;height:8px;overflow:hidden}
-.hud-xp-fill{background:linear-gradient(90deg,#69f0ae,#00e676);height:100%;border-radius:10px;transition:width .4s}
-.hud-xp-txt{font-size:10px;color:rgba(255,255,255,0.7);margin-top:2px;text-align:center}
-.hud-lvl{background:linear-gradient(135deg,#7c4dff,#651fff);border-radius:20px;padding:6px 12px;font-weight:800;font-size:14px;color:white;box-shadow:0 2px 8px rgba(124,77,255,0.5)}
+.hud-name{font-weight:800;font-size:13px;color:#e94560;flex:1}
+.hud-stat{background:rgba(255,255,255,0.08);border-radius:10px;padding:4px 8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:3px}
+.hud-stat.money{color:#FFD700}
+.hud-stat.auth{color:#e94560}
+.hud-stat.hp{color:#4CAF50}
 
 /* TABS */
-#tabs{
-  display:flex;
-  background:rgba(0,0,0,0.4);
-  backdrop-filter:blur(8px);
-  border-bottom:1px solid rgba(255,255,255,0.1);
-  flex-shrink:0;
-}
-.tab{flex:1;padding:9px 2px 7px;text-align:center;cursor:pointer;transition:.2s;border-bottom:3px solid transparent;position:relative}
-.tab-ico{font-size:22px;display:block;line-height:1}
-.tab-lbl{font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);margin-top:2px}
-.tab.on .tab-lbl{color:#FFD700}
-.tab.on{border-bottom-color:#FFD700}
-.tab-badge{position:absolute;top:6px;right:18%;background:#f44336;color:white;border-radius:10px;padding:1px 5px;font-size:9px;font-weight:800;display:none}
-.tab-badge.show{display:block}
+#tabs{display:flex;background:#0f3460;border-bottom:1px solid #e94560;flex-shrink:0}
+.tab{flex:1;padding:8px 2px 6px;text-align:center;cursor:pointer;border-bottom:3px solid transparent;transition:.2s;position:relative}
+.tab-i{font-size:20px;display:block}
+.tab-l{font-size:9px;font-weight:700;color:rgba(255,255,255,0.45);margin-top:1px}
+.tab.on{border-bottom-color:#e94560}
+.tab.on .tab-l{color:#e94560}
+.badge{position:absolute;top:4px;right:14%;background:#e94560;color:white;border-radius:8px;padding:1px 4px;font-size:8px;font-weight:800;display:none}
+.badge.on{display:block}
 
 /* SCREENS */
-#screens{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
-.screen{display:none;padding:12px;min-height:100%}
+#screens{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.screen{display:none;padding:12px}
 .screen.on{display:block}
 
-/* SECTION LABEL */
-.slabel{font-size:11px;font-weight:800;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px}
-
-/* FIELD */
-#fieldGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.plot{
-  border-radius:18px;aspect-ratio:1;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;position:relative;overflow:hidden;
-  transition:transform .12s,box-shadow .12s;
-  box-shadow:0 6px 0 rgba(0,0,0,0.25),0 8px 16px rgba(0,0,0,0.3);
-}
-.plot:active{transform:scale(0.92) translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,0.25)}
-.plot-empty{background:linear-gradient(160deg,#8B6343,#6B4226);border:2px dashed rgba(255,255,255,0.2)}
-.plot-growing{background:linear-gradient(160deg,#7B6230,#5a4820)}
-.plot-ready{background:linear-gradient(160deg,#5a9e38,#3d7a28);animation:plotPulse 1.8s ease-in-out infinite}
-@keyframes plotPulse{0%,100%{box-shadow:0 6px 0 rgba(0,0,0,0.25),0 0 0 0 rgba(100,200,60,0.4)}50%{box-shadow:0 6px 0 rgba(0,0,0,0.25),0 0 0 10px rgba(100,200,60,0)}}
-.plot-ico{font-size:36px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))}
-.plot-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,0.9);margin-top:4px;text-align:center}
-.plot-time{font-size:9px;color:rgba(255,255,255,0.65);margin-top:1px}
-.plot-plus{font-size:32px;color:rgba(255,255,255,0.3)}
-.plot-shine{position:absolute;top:-40%;left:-40%;width:60%;height:60%;background:rgba(255,255,255,0.12);border-radius:50%;pointer-events:none}
-
-.field-btn{
-  width:100%;padding:14px;border:none;border-radius:16px;
-  font-size:15px;font-weight:800;cursor:pointer;
-  background:linear-gradient(135deg,#FFD700,#FF8C00);
-  color:#3E2723;
-  box-shadow:0 5px 0 #c46a00,0 8px 16px rgba(255,140,0,0.4);
-  transition:.12s;margin-bottom:10px;
-}
-.field-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #c46a00}
-
-/* FLOAT ANIM */
-.float-txt{
-  position:fixed;pointer-events:none;z-index:9999;
-  font-size:18px;font-weight:800;color:#FFD700;
-  text-shadow:0 2px 8px rgba(0,0,0,0.5);
-  animation:floatUp 1.2s ease-out forwards;
-}
-@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-70px) scale(0.7)}}
-
-/* MODAL */
-#modalBg{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.6);z-index:500;
-  align-items:flex-end;
-  backdrop-filter:blur(4px);
-}
-#modalBg.open{display:flex}
-#modal{
-  background:linear-gradient(160deg,#fffde7,#fff9c4);
-  border-radius:28px 28px 0 0;
-  width:100%;max-height:82vh;overflow-y:auto;
-  padding:20px 14px 36px;
-  animation:slideUp .25s ease;
-}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-bar{width:44px;height:5px;background:#ddd;border-radius:4px;margin:0 auto 16px}
-.modal-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:16px}
-
-/* CROP ITEMS */
-.crop-row{
-  display:flex;align-items:center;gap:12px;
-  padding:13px;border-radius:16px;margin-bottom:8px;
-  background:white;box-shadow:0 2px 8px rgba(0,0,0,0.08);
-  cursor:pointer;transition:.15s;border:2px solid transparent;
-}
-.crop-row:active{background:#f5f5f5;transform:scale(0.98)}
-.crop-row.locked{opacity:0.4;cursor:not-allowed}
-.crop-ico{font-size:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))}
-.crop-inf{flex:1}
-.crop-name{font-size:15px;font-weight:800;color:var(--text)}
-.crop-stat{font-size:12px;color:#888;margin-top:2px}
-.crop-tag{
-  background:linear-gradient(135deg,#FFD700,#FF8C00);
-  color:#3E2723;border-radius:12px;
-  padding:6px 12px;font-weight:800;font-size:14px;
-  box-shadow:0 2px 6px rgba(255,140,0,0.4);
-}
-.profit-tag{font-size:10px;color:#4CAF50;font-weight:700;margin-top:2px}
+/* SECTION */
+.sec{font-size:10px;font-weight:800;color:#e94560;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sec::after{content:'';flex:1;height:1px;background:rgba(233,69,96,0.3)}
 
 /* CARDS */
-.card{
-  background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,249,196,0.9));
-  border-radius:20px;padding:16px;margin-bottom:10px;
-  box-shadow:0 4px 16px rgba(0,0,0,0.12);
-  border:1px solid rgba(255,255,255,0.8);
-}
-.card-row{display:flex;align-items:center;gap:14px}
-.card-ico{font-size:44px;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.2))}
+.card{background:linear-gradient(135deg,#16213e,#1a1a2e);border:1px solid rgba(233,69,96,0.2);border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 4px 16px rgba(0,0,0,0.4)}
+.card-row{display:flex;align-items:center;gap:12px}
+.card-ico{font-size:40px;filter:drop-shadow(0 2px 8px rgba(233,69,96,0.4))}
 .card-inf{flex:1}
-.card-name{font-size:17px;font-weight:800;color:var(--text)}
+.card-title{font-size:15px;font-weight:800;color:#eee}
 .card-sub{font-size:12px;color:#888;margin-top:3px}
-.card-status{font-size:12px;font-weight:700;margin-top:4px}
-.status-ready{color:#4CAF50}
-.status-wait{color:#FF9800}
+.card-extra{font-size:11px;color:#e94560;margin-top:4px;font-weight:600}
 
-.btn{
-  border:none;border-radius:14px;
-  padding:11px 16px;font-weight:800;font-size:14px;
-  cursor:pointer;transition:.12s;white-space:nowrap;
-}
-.btn:active{transform:scale(0.95)}
+/* BUTTONS */
+.btn{border:none;border-radius:12px;padding:10px 14px;font-weight:800;font-size:13px;cursor:pointer;transition:.15s}
+.btn:active{transform:scale(0.93)}
+.btn-red{background:linear-gradient(135deg,#e94560,#c0392b);color:white;box-shadow:0 4px 0 #922b21}
+.btn-red:active{box-shadow:0 1px 0 #922b21;transform:translateY(3px)}
+.btn-red:disabled{background:#555;box-shadow:0 4px 0 #333;cursor:not-allowed;transform:none}
+.btn-gold{background:linear-gradient(135deg,#FFD700,#FF8C00);color:#3E2723;box-shadow:0 4px 0 #c46a00}
+.btn-gold:active{box-shadow:0 1px 0 #c46a00;transform:translateY(3px)}
+.btn-gold:disabled{background:#555;box-shadow:0 4px 0 #333;cursor:not-allowed;transform:none}
 .btn-green{background:linear-gradient(135deg,#4CAF50,#2E7D32);color:white;box-shadow:0 4px 0 #1B5E20}
 .btn-green:active{box-shadow:0 1px 0 #1B5E20;transform:translateY(3px)}
-.btn-green:disabled{background:linear-gradient(135deg,#bbb,#999);box-shadow:0 4px 0 #777;cursor:not-allowed}
 .btn-blue{background:linear-gradient(135deg,#2196F3,#1565C0);color:white;box-shadow:0 4px 0 #0D47A1}
 .btn-blue:active{box-shadow:0 1px 0 #0D47A1;transform:translateY(3px)}
-.btn-red{background:linear-gradient(135deg,#F44336,#C62828);color:white;box-shadow:0 4px 0 #B71C1C}
-.btn-red:active{box-shadow:0 1px 0 #B71C1C;transform:translateY(3px)}
-.btn-gold{background:linear-gradient(135deg,#FFD700,#FF8C00);color:#3E2723;box-shadow:0 4px 0 #E65100}
-.btn-gold:active{box-shadow:0 1px 0 #E65100;transform:translateY(3px)}
-.btn-full{width:100%;padding:15px;font-size:16px;border-radius:16px;margin-top:6px}
+.btn-gray{background:#333;color:#aaa;box-shadow:0 4px 0 #222}
+.btn-full{width:100%;padding:14px;font-size:15px;border-radius:14px;margin-top:6px}
+
+/* STAT BARS */
+.bar-wrap{background:rgba(255,255,255,0.08);border-radius:8px;height:8px;overflow:hidden;margin-top:5px}
+.bar-fill{height:100%;border-radius:8px;transition:width .4s}
+.bar-hp{background:linear-gradient(90deg,#4CAF50,#8BC34A)}
+.bar-xp{background:linear-gradient(90deg,#e94560,#ff6b6b)}
+.bar-energy{background:linear-gradient(90deg,#2196F3,#03A9F4)}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat-box{background:linear-gradient(135deg,#16213e,#1a1a2e);border:1px solid rgba(233,69,96,0.2);border-radius:14px;padding:12px 8px;text-align:center}
+.stat-val{font-size:20px;font-weight:900;color:#eee}
+.stat-lbl{font-size:10px;color:#666;margin-top:3px}
+
+/* FIGHT */
+.fight-arena{
+  background:linear-gradient(160deg,#1a0a0a,#2d0f0f);
+  border:2px solid #e94560;border-radius:20px;
+  padding:20px;margin-bottom:12px;text-align:center;
+}
+.fighters{display:flex;align-items:center;justify-content:space-around;margin:16px 0}
+.fighter{text-align:center}
+.fighter-ico{font-size:52px;filter:drop-shadow(0 4px 12px rgba(233,69,96,0.5))}
+.fighter-name{font-size:12px;font-weight:700;color:#e94560;margin-top:6px}
+.fighter-hp{font-size:11px;color:#4CAF50}
+.vs{font-size:28px;font-weight:900;color:#e94560;text-shadow:0 0 20px #e94560}
+.fight-log{background:rgba(0,0,0,0.4);border-radius:12px;padding:12px;margin-top:12px;max-height:120px;overflow-y:auto;text-align:left}
+.log-line{font-size:12px;color:#ccc;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.log-line:last-child{border:none}
+.log-dmg{color:#e94560;font-weight:700}
+.log-heal{color:#4CAF50;font-weight:700}
+.log-win{color:#FFD700;font-weight:800}
+
+/* WORK */
+.work-card{
+  background:linear-gradient(135deg,#16213e,#1a1a2e);
+  border:1px solid rgba(233,69,96,0.2);
+  border-radius:16px;padding:14px;margin-bottom:10px;
+}
+.work-row{display:flex;align-items:center;gap:12px}
+.work-ico{font-size:36px}
+.work-inf{flex:1}
+.work-name{font-size:14px;font-weight:800}
+.work-desc{font-size:11px;color:#888;margin-top:2px}
+.work-reward{font-size:11px;color:#FFD700;margin-top:3px;font-weight:700}
+.cooldown-bar{margin-top:6px}
 
 /* SHOP */
-.shop-card{
-  background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(232,245,233,0.9));
-  border-radius:20px;padding:14px;margin-bottom:10px;
+.shop-item{
+  background:linear-gradient(135deg,#16213e,#1a1a2e);
+  border:1px solid rgba(255,215,0,0.2);
+  border-radius:16px;padding:14px;margin-bottom:10px;
   display:flex;align-items:center;gap:12px;
-  box-shadow:0 4px 14px rgba(0,0,0,0.1);
 }
-.shop-ico{font-size:40px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.2))}
+.shop-ico{font-size:36px}
 .shop-inf{flex:1}
-.shop-name{font-size:15px;font-weight:800;color:var(--text)}
-.shop-desc{font-size:11px;color:#777;margin-top:3px;line-height:1.4}
-
-/* INVENTORY */
-#invGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.inv-card{
-  background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,249,196,0.9));
-  border-radius:16px;padding:14px 8px;text-align:center;
-  box-shadow:0 3px 10px rgba(0,0,0,0.1);
-  border:1px solid rgba(255,255,255,0.8);
-}
-.inv-ico{font-size:32px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))}
-.inv-qty{font-size:18px;font-weight:800;color:var(--text);margin-top:4px}
-.inv-name{font-size:10px;color:#888;margin-top:2px}
-.inv-val{font-size:11px;font-weight:700;color:#FF8C00;margin-top:1px}
-.inv-empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:#aaa}
-.inv-empty-ico{font-size:60px;display:block;margin-bottom:10px;filter:grayscale(0.5)}
+.shop-name{font-size:14px;font-weight:800}
+.shop-desc{font-size:11px;color:#888;margin-top:2px}
+.shop-owned{font-size:10px;color:#4CAF50;margin-top:3px;font-weight:700}
 
 /* PROFILE */
 .prof-hero{
-  background:linear-gradient(135deg,#7c4dff,#651fff);
-  border-radius:24px;padding:24px 20px;margin-bottom:14px;
-  text-align:center;box-shadow:0 6px 20px rgba(124,77,255,0.4);
+  background:linear-gradient(160deg,#16213e,#0f3460);
+  border:2px solid #e94560;border-radius:20px;
+  padding:20px;text-align:center;margin-bottom:12px;
 }
-.prof-ava{font-size:64px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));margin-bottom:8px}
-.prof-name{font-size:22px;font-weight:800;color:white}
-.prof-lvl{font-size:14px;color:rgba(255,255,255,0.7);margin-top:4px}
-.prof-xp-bar{background:rgba(255,255,255,0.2);border-radius:12px;height:12px;margin:12px 0 6px;overflow:hidden}
-.prof-xp-fill{background:linear-gradient(90deg,#69f0ae,#00e676);height:100%;border-radius:12px;transition:width .5s}
-.prof-xp-lbl{font-size:12px;color:rgba(255,255,255,0.6)}
+.prof-ava{font-size:64px;margin-bottom:8px;filter:drop-shadow(0 4px 12px rgba(233,69,96,0.4))}
+.prof-name{font-size:22px;font-weight:800;color:#eee}
+.prof-rank{font-size:13px;color:#e94560;margin-top:4px;font-weight:700}
+.prof-xp-bar{background:rgba(255,255,255,0.1);border-radius:10px;height:10px;margin:12px 0 6px;overflow:hidden}
+.prof-xp-fill{background:linear-gradient(90deg,#e94560,#ff6b6b);height:100%;border-radius:10px;transition:width .5s}
+.prof-xp-lbl{font-size:11px;color:#666}
 
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.stat-card{
-  background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,249,196,0.9));
-  border-radius:18px;padding:16px;text-align:center;
-  box-shadow:0 3px 12px rgba(0,0,0,0.1);
-}
-.stat-val{font-size:24px;font-weight:900;color:var(--text)}
-.stat-lbl{font-size:11px;color:#999;margin-top:4px}
-
-/* ACHIEVEMENTS */
-.ach-card{
-  background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,249,196,0.9));
-  border-radius:18px;padding:14px;margin-bottom:8px;
+/* RATING */
+.rating-item{
+  background:linear-gradient(135deg,#16213e,#1a1a2e);
+  border:1px solid rgba(233,69,96,0.15);
+  border-radius:14px;padding:12px 14px;margin-bottom:8px;
   display:flex;align-items:center;gap:12px;
-  box-shadow:0 3px 10px rgba(0,0,0,0.08);
-  opacity:0.4;
 }
-.ach-card.done{opacity:1;border:2px solid #FFD700}
-.ach-ico{font-size:36px}
-.ach-inf{flex:1}
-.ach-name{font-size:14px;font-weight:800;color:var(--text)}
-.ach-desc{font-size:11px;color:#888;margin-top:2px}
+.rating-pos{font-size:20px;font-weight:900;color:#e94560;min-width:30px}
+.rating-ico{font-size:28px}
+.rating-inf{flex:1}
+.rating-name{font-size:14px;font-weight:800}
+.rating-sub{font-size:11px;color:#888;margin-top:2px}
+.rating-auth{font-size:13px;font-weight:800;color:#FFD700}
+
+/* MODAL */
+#mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:flex-end;backdrop-filter:blur(4px)}
+#mbg.open{display:flex}
+#modal{background:linear-gradient(160deg,#16213e,#1a1a2e);border:1px solid #e94560;border-radius:24px 24px 0 0;width:100%;max-height:80vh;overflow-y:auto;padding:20px 14px 36px;animation:up .25s ease}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mbar{width:40px;height:4px;background:#e94560;border-radius:4px;margin:0 auto 16px;opacity:0.5}
+.mtitle{font-size:18px;font-weight:800;color:#eee;margin-bottom:14px}
 
 /* TOAST */
-#toast{
-  position:fixed;top:85px;left:50%;transform:translateX(-50%) translateY(-10px);
-  background:rgba(20,20,20,0.9);color:white;
-  padding:10px 22px;border-radius:24px;
-  font-size:14px;font-weight:700;z-index:9998;
-  opacity:0;transition:.3s;pointer-events:none;
-  text-align:center;max-width:88vw;
-  box-shadow:0 4px 20px rgba(0,0,0,0.3);
-  backdrop-filter:blur(8px);
-}
+#toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-10px);background:rgba(15,52,96,0.95);border:1px solid #e94560;color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;opacity:0;transition:.3s;pointer-events:none;text-align:center;max-width:88vw;box-shadow:0 4px 20px rgba(233,69,96,0.3)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* PROGRESS BAR (timers) */
-.prog-wrap{background:rgba(0,0,0,0.2);border-radius:6px;height:5px;margin-top:5px;overflow:hidden}
-.prog-fill{background:linear-gradient(90deg,#69f0ae,#FFD700);height:100%;border-radius:6px;transition:width .5s}
+/* FLOAT */
+.float{position:fixed;pointer-events:none;z-index:9999;font-size:16px;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,0.6);animation:fup 1.2s ease-out forwards}
+@keyframes fup{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
 
-/* DIVIDER */
-.divider{height:1px;background:rgba(255,255,255,0.1);margin:12px 0}
+.divider{height:1px;background:rgba(233,69,96,0.2);margin:12px 0}
+.empty{text-align:center;padding:40px 20px;color:#444;font-size:14px}
+.empty-ico{font-size:50px;display:block;margin-bottom:10px}
 </style>
 </head>
 <body>
-
-<div id="scene">
-  <!-- clouds injected by JS -->
-</div>
-
 <div id="app">
   <!-- HUD -->
   <div id="hud">
-    <div class="hud-coin">🪙<span id="hudCoins">150</span></div>
-    <div class="hud-xp">
-      <div class="hud-xp-bar"><div class="hud-xp-fill" id="hudXpFill" style="width:0%"></div></div>
-      <div class="hud-xp-txt" id="hudXpTxt">0/100 XP</div>
-    </div>
-    <div class="hud-lvl">⭐<span id="hudLvl">1</span></div>
+    <div class="hud-name" id="hudName">Зэк</div>
+    <div class="hud-stat money">💰<span id="hudMoney">0</span></div>
+    <div class="hud-stat auth">👑<span id="hudAuth">0</span></div>
+    <div class="hud-stat hp">❤️<span id="hudHp">100</span></div>
   </div>
 
   <!-- TABS -->
   <div id="tabs">
-    <div class="tab on" onclick="go('field')"><span class="tab-ico">🌾</span><div class="tab-lbl">Ферма</div><span class="tab-badge" id="badge-field"></span></div>
-    <div class="tab" onclick="go('animals')"><span class="tab-ico">🐄</span><div class="tab-lbl">Животные</div><span class="tab-badge" id="badge-animals"></span></div>
-    <div class="tab" onclick="go('shop')"><span class="tab-ico">🏪</span><div class="tab-lbl">Магазин</div></div>
-    <div class="tab" onclick="go('inv')"><span class="tab-ico">🎒</span><div class="tab-lbl">Склад</div><span class="tab-badge" id="badge-inv"></span></div>
-    <div class="tab" onclick="go('profile')"><span class="tab-ico">🏆</span><div class="tab-lbl">Профиль</div></div>
+    <div class="tab on" onclick="go('cell')"><span class="tab-i">🏠</span><div class="tab-l">Камера</div></div>
+    <div class="tab" onclick="go('fight')"><span class="tab-i">⚔️</span><div class="tab-l">Бой</div><span class="badge" id="b-fight"></span></div>
+    <div class="tab" onclick="go('work')"><span class="tab-i">💼</span><div class="tab-l">Работа</div><span class="badge" id="b-work"></span></div>
+    <div class="tab" onclick="go('shop')"><span class="tab-i">🏪</span><div class="tab-l">Магазин</div></div>
+    <div class="tab" onclick="go('profile')"><span class="tab-i">👤</span><div class="tab-l">Профиль</div></div>
   </div>
 
   <!-- SCREENS -->
   <div id="screens">
 
-    <!-- FIELD -->
-    <div class="screen on" id="s-field">
-      <div class="slabel" style="margin-top:2px">🌱 Твои поля</div>
-      <div id="fieldGrid"></div>
-      <button class="field-btn" onclick="buyPlot()">➕ Купить участок</button>
+    <!-- CELL -->
+    <div class="screen on" id="s-cell">
+      <div class="sec">🏠 Твоя камера</div>
+      <div class="card" style="text-align:center;padding:20px">
+        <div style="font-size:56px;margin-bottom:8px" id="cellAva">😤</div>
+        <div style="font-size:16px;font-weight:800" id="cellName">Зэк</div>
+        <div style="font-size:12px;color:#e94560;margin-top:4px" id="cellRank">Новичок</div>
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:4px"><span>❤️ Здоровье</span><span id="hpTxt">100/100</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-hp" id="hpBar" style="width:100%"></div></div>
+        </div>
+        <div style="margin-top:8px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:4px"><span>⚡ Энергия</span><span id="enTxt">10/10</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-energy" id="enBar" style="width:100%"></div></div>
+        </div>
+        <div style="margin-top:8px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:4px"><span>⭐ Опыт</span><span id="xpTxt">0/100</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-xp" id="xpBar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="sec">📊 Характеристики</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val" id="stStr">1</div><div class="stat-lbl">💪 Сила</div></div>
+        <div class="stat-box"><div class="stat-val" id="stDef">1</div><div class="stat-lbl">🛡️ Защита</div></div>
+        <div class="stat-box"><div class="stat-val" id="stSpd">1</div><div class="stat-lbl">⚡ Скорость</div></div>
+        <div class="stat-box"><div class="stat-val" id="stLvl">1</div><div class="stat-lbl">⭐ Уровень</div></div>
+        <div class="stat-box"><div class="stat-val" id="stAuth">0</div><div class="stat-lbl">👑 Авторитет</div></div>
+        <div class="stat-box"><div class="stat-val" id="stWins">0</div><div class="stat-lbl">🏆 Победы</div></div>
+      </div>
+
+      <div class="sec">⬆️ Прокачка</div>
+      <div class="card">
+        <div style="font-size:12px;color:#888;margin-bottom:10px">Очки навыков: <span id="skillPts" style="color:#FFD700;font-weight:800">0</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <button class="btn btn-red" onclick="upgStat('str')">+💪</button>
+          <button class="btn btn-blue" onclick="upgStat('def')">+🛡️</button>
+          <button class="btn btn-gold" onclick="upgStat('spd')">+⚡</button>
+        </div>
+      </div>
+
+      <button class="btn btn-green btn-full" onclick="rest()">😴 Отдохнуть (+энергия)</button>
     </div>
 
-    <!-- ANIMALS -->
-    <div class="screen" id="s-animals">
-      <div class="slabel" style="margin-top:2px">🐾 Твои животные</div>
-      <div id="animalsList"></div>
+    <!-- FIGHT -->
+    <div class="screen" id="s-fight">
+      <div class="sec">⚔️ Арена</div>
+      <div class="fight-arena" id="fightArena">
+        <div style="font-size:13px;color:#888">Выбери противника и вступи в бой!</div>
+        <div class="fighters">
+          <div class="fighter">
+            <div class="fighter-ico" id="myIco">😤</div>
+            <div class="fighter-name" id="myFName">Ты</div>
+            <div class="fighter-hp" id="myFHp">❤️ 100</div>
+          </div>
+          <div class="vs">VS</div>
+          <div class="fighter">
+            <div class="fighter-ico" id="enemyIco">❓</div>
+            <div class="fighter-name" id="enemyFName">???</div>
+            <div class="fighter-hp" id="enemyFHp">❤️ ???</div>
+          </div>
+        </div>
+        <div class="fight-log" id="fightLog">
+          <div class="log-line" style="color:#666">Выбери противника ниже...</div>
+        </div>
+      </div>
+
+      <div class="sec">👊 Противники</div>
+      <div id="enemyList"></div>
+    </div>
+
+    <!-- WORK -->
+    <div class="screen" id="s-work">
+      <div class="sec">💼 Работа на зоне</div>
+      <div id="workList"></div>
+      <div class="divider"></div>
+      <div class="sec">🎯 Задания</div>
+      <div id="questList"></div>
     </div>
 
     <!-- SHOP -->
     <div class="screen" id="s-shop">
-      <div class="slabel" style="margin-top:2px">🐾 Животные</div>
-      <div id="shopList"></div>
+      <div class="sec">⚔️ Оружие</div>
+      <div id="shopWeapons"></div>
       <div class="divider"></div>
-      <div class="slabel">💰 Продать</div>
-      <button class="btn btn-red btn-full" onclick="sellAll()">💰 Продать всё со склада</button>
-    </div>
-
-    <!-- INVENTORY -->
-    <div class="screen" id="s-inv">
-      <div class="slabel" style="margin-top:2px">📦 Склад</div>
-      <div id="invGrid"></div>
+      <div class="sec">🛡️ Броня</div>
+      <div id="shopArmor"></div>
+      <div class="divider"></div>
+      <div class="sec">💊 Аптечка</div>
+      <div id="shopMeds"></div>
     </div>
 
     <!-- PROFILE -->
     <div class="screen" id="s-profile">
       <div class="prof-hero">
-        <div class="prof-ava">🧑‍🌾</div>
-        <div class="prof-name" id="profName">Фермер</div>
-        <div class="prof-lvl">Уровень <span id="profLvl">1</span></div>
-        <div class="prof-xp-bar"><div class="prof-xp-fill" id="profXpFill" style="width:0%"></div></div>
+        <div class="prof-ava" id="profAva">😤</div>
+        <div class="prof-name" id="profName">Зэк</div>
+        <div class="prof-rank" id="profRank">Новичок · Уровень 1</div>
+        <div class="prof-xp-bar"><div class="prof-xp-fill" id="profXp" style="width:0%"></div></div>
         <div class="prof-xp-lbl" id="profXpLbl">0 / 100 опыта</div>
       </div>
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-val" id="st1">0</div><div class="stat-lbl">💰 Монет</div></div>
-        <div class="stat-card"><div class="stat-val" id="st2">0</div><div class="stat-lbl">🌾 Собрано</div></div>
-        <div class="stat-card"><div class="stat-val" id="st3">0</div><div class="stat-lbl">💸 Заработано</div></div>
-        <div class="stat-card"><div class="stat-val" id="st4">0</div><div class="stat-lbl">🌍 Участков</div></div>
+        <div class="stat-box"><div class="stat-val" id="p1">0</div><div class="stat-lbl">💰 Бабло</div></div>
+        <div class="stat-box"><div class="stat-val" id="p2">0</div><div class="stat-lbl">🏆 Победы</div></div>
+        <div class="stat-box"><div class="stat-val" id="p3">0</div><div class="stat-lbl">💀 Поражения</div></div>
+        <div class="stat-box"><div class="stat-val" id="p4">0</div><div class="stat-lbl">👑 Авторитет</div></div>
+        <div class="stat-box"><div class="stat-val" id="p5">0</div><div class="stat-lbl">💼 Работ</div></div>
+        <div class="stat-box"><div class="stat-val" id="p6">0</div><div class="stat-lbl">🎯 Заданий</div></div>
       </div>
-      <div class="slabel">🏆 Достижения</div>
-      <div id="achList"></div>
+      <div class="sec">🏆 Рейтинг зоны</div>
+      <div id="ratingList"></div>
     </div>
 
   </div>
 </div>
 
 <!-- MODAL -->
-<div id="modalBg" onclick="bgClose(event)">
+<div id="mbg" onclick="bgc(event)">
   <div id="modal">
-    <div class="modal-bar"></div>
-    <div class="modal-title" id="modalTitle"></div>
-    <div id="modalBody"></div>
+    <div class="mbar"></div>
+    <div class="mtitle" id="mtitle"></div>
+    <div id="mbody"></div>
   </div>
 </div>
-
 <div id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════════════════════
-//  DATA
-// ══════════════════════════════════════════════════════════
-const CROPS={
-  wheat: {n:"Пшеница", e:"🌾", buy:10,  sell:25,  grow:60,   lvl:1},
-  carrot:{n:"Морковь",  e:"🥕", buy:20,  sell:55,  grow:120,  lvl:1},
-  potato:{n:"Картофель",e:"🥔", buy:30,  sell:90,  grow:180,  lvl:2},
-  corn:  {n:"Кукуруза", e:"🌽", buy:50,  sell:160, grow:300,  lvl:3},
-  tomato:{n:"Помидор",  e:"🍅", buy:80,  sell:250, grow:480,  lvl:4},
-  pepper:{n:"Перец",    e:"🌶️", buy:120, sell:400, grow:720,  lvl:5},
-  melon: {n:"Дыня",     e:"🍈", buy:200, sell:700, grow:1200, lvl:6},
-};
+// ══════════ DATA ══════════
+const RANKS=["Новичок","Шестёрка","Пацан","Авторитет","Смотрящий","Вор в законе","Пахан"];
+const AVATARS=["😤","😠","🤬","😈","👿","💀","☠️"];
 
-const ANIMALS={
-  chicken:{n:"Курица", e:"🐔", buy:200, prod:"egg",  pe:"🥚", pn:"Яйцо",   ps:30,  iv:300},
-  cow:    {n:"Корова", e:"🐄", buy:800, prod:"milk", pe:"🥛", pn:"Молоко", ps:100, iv:600},
-  pig:    {n:"Свинья", e:"🐷", buy:500, prod:"meat", pe:"🥩", pn:"Мясо",   ps:150, iv:900},
-  sheep:  {n:"Овца",   e:"🐑", buy:350, prod:"wool", pe:"🧶", pn:"Шерсть", ps:80,  iv:450},
-  bee:    {n:"Пчела",  e:"🐝", buy:300, prod:"honey",pe:"🍯", pn:"Мёд",    ps:120, iv:540},
-};
-
-const ACHIEVEMENTS=[
-  {id:"first_harvest",  n:"Первый урожай",  e:"🌱", desc:"Собери первый урожай"},
-  {id:"rich",           n:"Богач",          e:"💰", desc:"Накопи 1000 монет"},
-  {id:"farmer5",        n:"Фермер",         e:"🧑‍🌾",desc:"Достигни 5 уровня"},
-  {id:"plots6",         n:"Большая ферма",  e:"🏡", desc:"Купи 6 участков"},
-  {id:"animal3",        n:"Зоопарк",        e:"🐾", desc:"Имей 3 вида животных"},
-  {id:"sell1000",       n:"Торговец",       e:"🏪", desc:"Заработай 1000 монет на продажах"},
+const ENEMIES=[
+  {id:"bully",    n:"Шестёрка",   e:"😤", hp:30,  str:2,def:1,reward:{money:50,xp:20,auth:5},  energy:1},
+  {id:"fighter",  n:"Боец",       e:"😠", hp:60,  str:4,def:2,reward:{money:100,xp:40,auth:10}, energy:2},
+  {id:"enforcer", n:"Торпеда",    e:"🤬", hp:100, str:7,def:4,reward:{money:200,xp:80,auth:20}, energy:3},
+  {id:"authority",n:"Авторитет",  e:"😈", hp:160, str:11,def:7,reward:{money:400,xp:150,auth:40},energy:4},
+  {id:"boss",     n:"Смотрящий",  e:"👿", hp:250, str:16,def:12,reward:{money:800,xp:300,auth:80},energy:5},
 ];
 
-const SAVE="fgv3";
+const WORKS=[
+  {id:"sweep",   n:"Уборка",      e:"🧹", time:60,   reward:{money:30,xp:5},   energy:1, desc:"Подметаешь плац"},
+  {id:"kitchen", n:"Кухня",       e:"🍳", time:120,  reward:{money:70,xp:10},  energy:1, desc:"Чистишь картошку"},
+  {id:"laundry", n:"Прачечная",   e:"👕", time:300,  reward:{money:150,xp:20}, energy:2, desc:"Стираешь робы"},
+  {id:"factory", n:"Завод",       e:"🔧", time:600,  reward:{money:350,xp:40}, energy:2, desc:"Точишь детали"},
+  {id:"scheme",  n:"Схема",       e:"🤫", time:1800, reward:{money:1000,xp:100},energy:3, desc:"Мутишь делишки"},
+];
+
+const QUESTS=[
+  {id:"q_fight3",  n:"Разминка",    e:"🥊", desc:"Победи 3 противников",   goal:3,  type:"wins",   reward:{money:200,xp:50,auth:15}},
+  {id:"q_work5",   n:"Трудяга",     e:"💪", desc:"Выполни 5 работ",         goal:5,  type:"works",  reward:{money:300,xp:80,auth:10}},
+  {id:"q_money",   n:"Накопи бабло",e:"💰", desc:"Заработай 500 монет",     goal:500,type:"money_earned",reward:{money:100,xp:60,auth:20}},
+  {id:"q_lvl3",    n:"Качок",       e:"💪", desc:"Достигни 3 уровня",       goal:3,  type:"level",  reward:{money:500,xp:0,auth:30}},
+];
+
+const WEAPONS=[
+  {id:"fist",   n:"Кулаки",    e:"👊", bonus:0,  price:0,    desc:"С чем родился"},
+  {id:"shiv",   n:"Заточка",   e:"🔪", bonus:3,  price:150,  desc:"+3 к атаке"},
+  {id:"chain",  n:"Цепь",      e:"⛓️", bonus:6,  price:400,  desc:"+6 к атаке"},
+  {id:"bat",    n:"Дубина",    e:"🪵", bonus:10, price:900,  desc:"+10 к атаке"},
+  {id:"knife",  n:"Нож",       e:"🗡️", bonus:16, price:2000, desc:"+16 к атаке"},
+];
+
+const ARMOR=[
+  {id:"none",   n:"Без брони", e:"👕", bonus:0,  price:0,    desc:"Голая кожа"},
+  {id:"jacket", n:"Телогрейка",e:"🧥", bonus:3,  price:200,  desc:"+3 к защите"},
+  {id:"vest",   n:"Жилет",     e:"🦺", bonus:7,  price:600,  desc:"+7 к защите"},
+  {id:"armor",  n:"Бронежилет",e:"🛡️", bonus:13, price:1500, desc:"+13 к защите"},
+];
+
+const MEDS=[
+  {id:"bandage",n:"Бинт",      e:"🩹", hp:20,  price:50,  desc:"Восстанавливает 20 HP"},
+  {id:"kit",    n:"Аптечка",   e:"💊", hp:50,  price:120, desc:"Восстанавливает 50 HP"},
+  {id:"syringe",n:"Укол",      e:"💉", hp:100, price:300, desc:"Восстанавливает 100 HP"},
+];
+
+// ══════════ STATE ══════════
+const KEY="zona13v2";
 const ts=()=>Math.floor(Date.now()/1000);
-const fmt=s=>{if(s<=0)return"Готово!";if(s<60)return`${s}с`;if(s<3600)return`${Math.floor(s/60)}м ${s%60}с`;return`${Math.floor(s/3600)}ч ${Math.floor((s%3600)/60)}м`};
+const fmt=s=>{if(s<60)return`${s}с`;if(s<3600)return`${Math.floor(s/60)}м ${s%60}с`;return`${Math.floor(s/3600)}ч ${Math.floor((s%3600)/60)}м`};
 
-// ══════════════════════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════════════════════
-function def(){return{coins:150,level:1,xp:0,plots:Array(3).fill(0).map(()=>({crop:null,at:null})),animals:{},inv:{},stats:{harvested:0,sold:0,earned:0},ach:{}}}
-let S=()=>{try{return JSON.parse(localStorage.getItem(SAVE))||def()}catch{return def()}}();
-const save=()=>localStorage.setItem(SAVE,JSON.stringify(S));
+function def(){
+  return{
+    name:"Зэк",money:100,level:1,xp:0,
+    hp:100,maxHp:100,energy:10,maxEnergy:10,
+    str:2,def:1,spd:1,skillPts:0,auth:0,
+    weapon:"fist",armor:"none",
+    stats:{wins:0,losses:0,works:0,quests:0,moneyEarned:0},
+    workCds:{},questProgress:{},questDone:{},
+    lastRest:0,lastEnergyRegen:ts(),
+    rating:[
+      {name:"Бугор",auth:500,lvl:8,e:"💀"},
+      {name:"Чифирь",auth:320,lvl:6,e:"😈"},
+      {name:"Кусок",auth:180,lvl:4,e:"🤬"},
+    ]
+  };
+}
 
-function xp(n){
+let S=()=>{try{return JSON.parse(localStorage.getItem(KEY))||def()}catch{return def()}}();
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+
+function rank(){return RANKS[Math.min(Math.floor(S.level/2),RANKS.length-1)]}
+function ava(){return AVATARS[Math.min(Math.floor(S.level/2),AVATARS.length-1)]}
+function weaponBonus(){return WEAPONS.find(w=>w.id===S.weapon)?.bonus||0}
+function armorBonus(){return ARMOR.find(a=>a.id===S.armor)?.bonus||0}
+function myAtk(){return S.str+weaponBonus()+Math.floor(S.spd/3)}
+function myDef(){return S.def+armorBonus()}
+
+function addXp(n){
   S.xp+=n;
-  const r=S.level*100;
-  if(S.xp>=r){S.xp-=r;S.level++;toast(`🎉 Уровень ${S.level}! Новые культуры разблокированы!`);checkAch()}
+  const req=S.level*100;
+  if(S.xp>=req){S.xp-=req;S.level++;S.skillPts+=3;S.maxHp+=10;S.hp=S.maxHp;S.maxEnergy=Math.min(20,S.level+9);
+    toast(`🎉 Уровень ${S.level}! +3 очка навыков!`)}
   save();hud();
 }
 
-function checkAch(){
-  const a=S.ach;
-  if(!a.first_harvest&&S.stats.harvested>=1){a.first_harvest=1;toast("🏆 Достижение: Первый урожай!")}
-  if(!a.rich&&S.coins>=1000){a.rich=1;toast("🏆 Достижение: Богач!")}
-  if(!a.farmer5&&S.level>=5){a.farmer5=1;toast("🏆 Достижение: Фермер!")}
-  if(!a.plots6&&S.plots.length>=6){a.plots6=1;toast("🏆 Достижение: Большая ферма!")}
-  if(!a.animal3&&Object.keys(S.animals).length>=3){a.animal3=1;toast("🏆 Достижение: Зоопарк!")}
-  if(!a.sell1000&&S.stats.earned>=1000){a.sell1000=1;toast("🏆 Достижение: Торговец!")}
-  save();
+function addAuth(n){S.auth+=n;save();hud()}
+
+// energy regen
+function regenEnergy(){
+  const now=ts();const diff=now-S.lastEnergyRegen;
+  const regen=Math.floor(diff/300); // 1 energy per 5 min
+  if(regen>0&&S.energy<S.maxEnergy){
+    S.energy=Math.min(S.maxEnergy,S.energy+regen);
+    S.lastEnergyRegen=now;save();
+  }
 }
 
-// ══════════════════════════════════════════════════════════
-//  HUD
-// ══════════════════════════════════════════════════════════
+// ══════════ HUD ══════════
 function hud(){
-  document.getElementById("hudCoins").textContent=S.coins;
-  document.getElementById("hudLvl").textContent=S.level;
-  const pct=Math.min(100,(S.xp/(S.level*100))*100);
-  document.getElementById("hudXpFill").style.width=pct+"%";
-  document.getElementById("hudXpTxt").textContent=`${S.xp}/${S.level*100} XP`;
-  // badges
-  const readyF=S.plots.filter(p=>p.crop&&ts()-p.at>=CROPS[p.crop].grow).length;
-  const b=document.getElementById("badge-field");
-  if(readyF>0){b.textContent=readyF;b.classList.add("show")}else b.classList.remove("show");
-  const readyA=Object.entries(S.animals).filter(([k,v])=>v.count>0&&ts()-(v.last||0)>=ANIMALS[k].iv).length;
-  const ba=document.getElementById("badge-animals");
-  if(readyA>0){ba.textContent=readyA;ba.classList.add("show")}else ba.classList.remove("show");
+  regenEnergy();
+  document.getElementById("hudName").textContent=S.name;
+  document.getElementById("hudMoney").textContent=S.money;
+  document.getElementById("hudAuth").textContent=S.auth;
+  document.getElementById("hudHp").textContent=S.hp;
+  // work badge
+  const wb=Object.values(S.workCds).filter(cd=>ts()>=cd).length;
+  const bb=document.getElementById("b-work");
+  if(wb>0){bb.textContent=wb;bb.classList.add("on")}else bb.classList.remove("on");
 }
 
-// ══════════════════════════════════════════════════════════
-//  TABS
-// ══════════════════════════════════════════════════════════
-let cur="field";
+// ══════════ TABS ══════════
+let cur="cell";
 function go(t){
   cur=t;
   document.querySelectorAll(".tab").forEach(e=>e.classList.remove("on"));
   document.querySelectorAll(".screen").forEach(e=>e.classList.remove("on"));
-  const tabs=["field","animals","shop","inv","profile"];
+  const tabs=["cell","fight","work","shop","profile"];
   document.querySelectorAll(".tab")[tabs.indexOf(t)].classList.add("on");
   document.getElementById("s-"+t).classList.add("on");
-  if(t==="field")renderField();
-  if(t==="animals")renderAnimals();
-  if(t==="shop")renderShop();
-  if(t==="inv")renderInv();
-  if(t==="profile")renderProfile();
+  renders[t]&&renders[t]();
 }
 
-// ══════════════════════════════════════════════════════════
-//  FIELD
-// ══════════════════════════════════════════════════════════
-function renderField(){
-  const g=document.getElementById("fieldGrid");
-  g.innerHTML="";
-  S.plots.forEach((p,i)=>{
-    const d=document.createElement("div");
-    d.className="plot";
-    if(!p.crop){
-      d.classList.add("plot-empty");
-      d.innerHTML=`<span class="plot-plus">＋</span><span class="plot-lbl">Пусто</span><div class="plot-shine"></div>`;
-      d.onclick=()=>openPlantModal(i);
-    } else {
-      const c=CROPS[p.crop];
-      const el=ts()-p.at;
-      const done=el>=c.grow;
-      const left=Math.max(0,c.grow-el);
-      const pct=Math.min(100,(el/c.grow)*100);
-      if(done){
-        d.classList.add("plot-ready");
-        d.innerHTML=`<span class="plot-ico">${c.e}</span><span class="plot-lbl">✅ Собрать!</span><div class="plot-shine"></div>`;
-        d.onclick=()=>harvest(i,d);
-      } else {
-        d.classList.add("plot-growing");
-        d.innerHTML=`<span class="plot-ico" style="font-size:28px">${c.e}</span><span class="plot-lbl">${c.n}</span><span class="plot-time">${fmt(left)}</span><div class="prog-wrap" style="width:80%;margin-top:4px"><div class="prog-fill" style="width:${pct}%"></div></div><div class="plot-shine"></div>`;
-        d.onclick=()=>toast(`⏳ ${c.n} готово через ${fmt(left)}`);
-      }
-    }
-    g.appendChild(d);
-  });
+// ══════════ CELL ══════════
+function renderCell(){
+  regenEnergy();
+  document.getElementById("cellAva").textContent=ava();
+  document.getElementById("cellName").textContent=S.name;
+  document.getElementById("cellRank").textContent=rank();
+  document.getElementById("hpTxt").textContent=`${S.hp}/${S.maxHp}`;
+  document.getElementById("hpBar").style.width=(S.hp/S.maxHp*100)+"%";
+  document.getElementById("enTxt").textContent=`${S.energy}/${S.maxEnergy}`;
+  document.getElementById("enBar").style.width=(S.energy/S.maxEnergy*100)+"%";
+  document.getElementById("xpTxt").textContent=`${S.xp}/${S.level*100}`;
+  document.getElementById("xpBar").style.width=(S.xp/(S.level*100)*100)+"%";
+  document.getElementById("stStr").textContent=S.str;
+  document.getElementById("stDef").textContent=S.def;
+  document.getElementById("stSpd").textContent=S.spd;
+  document.getElementById("stLvl").textContent=S.level;
+  document.getElementById("stAuth").textContent=S.auth;
+  document.getElementById("stWins").textContent=S.stats.wins;
+  document.getElementById("skillPts").textContent=S.skillPts;
   hud();
 }
 
-function harvest(i,el){
-  const p=S.plots[i];const c=CROPS[p.crop];
-  S.inv[p.crop]=(S.inv[p.crop]||0)+1;
-  S.plots[i]={crop:null,at:null};
-  S.stats.harvested++;
-  xp(10);save();
-  floatTxt(el,`+${c.e}`);
-  toast(`✅ Собрал ${c.e} ${c.n}!`);
-  renderField();checkAch();
+function upgStat(stat){
+  if(S.skillPts<=0){toast("❌ Нет очков навыков!");return}
+  S[stat]++;S.skillPts--;save();
+  toast(`✅ ${stat==="str"?"💪 Сила":stat==="def"?"🛡️ Защита":"⚡ Скорость"} повышена!`);
+  renderCell();
 }
 
-function openPlantModal(idx){
-  document.getElementById("modalTitle").textContent="🌱 Что посадить?";
-  const b=document.getElementById("modalBody");
-  b.innerHTML="";
-  Object.entries(CROPS).forEach(([k,c])=>{
-    const locked=S.level<c.lvl;
-    const profit=c.sell-c.buy;
-    const d=document.createElement("div");
-    d.className="crop-row"+(locked?" locked":"");
-    d.innerHTML=`<span class="crop-ico">${c.e}</span>
-    <div class="crop-inf">
-      <div class="crop-name">${locked?"🔒 ":""}${c.n}${locked?` <small style="color:#aaa">(ур.${c.lvl})</small>`:""}</div>
-      <div class="crop-stat">⏱ ${fmt(c.grow)} · Продажа ${c.sell}🪙</div>
-      ${!locked?`<div class="profit-tag">+${profit}🪙 прибыль</div>`:""}
-    </div>
-    <span class="crop-tag">${c.buy}🪙</span>`;
-    if(!locked)d.onclick=()=>plant(idx,k,c);
-    b.appendChild(d);
-  });
-  openModal();
+function rest(){
+  const now=ts();
+  if(now-S.lastRest<300){toast(`⏳ Отдых доступен через ${fmt(300-(now-S.lastRest))}`);return}
+  const gain=Math.min(3,S.maxEnergy-S.energy);
+  if(gain<=0){toast("⚡ Энергия полная!");return}
+  S.energy+=gain;S.lastRest=now;save();
+  toast(`😴 Отдохнул! +${gain} энергии`);renderCell();
 }
 
-function plant(idx,k,c){
-  if(S.coins<c.buy){toast(`❌ Нужно ${c.buy}🪙`);return}
-  S.coins-=c.buy;
-  S.plots[idx]={crop:k,at:ts()};
-  save();closeModal();
-  toast(`🌱 Посадил ${c.e} ${c.n}!`);
-  renderField();
-}
-
-function buyPlot(){
-  if(S.plots.length>=12){toast("❌ Максимум 12 участков!");return}
-  const cost=100*S.plots.length;
-  if(S.coins<cost){toast(`❌ Нужно ${cost}🪙 для нового участка`);return}
-  S.coins-=cost;
-  S.plots.push({crop:null,at:null});
-  save();toast(`✅ Новый участок за ${cost}🪙!`);
-  renderField();checkAch();
-}
-
-// ══════════════════════════════════════════════════════════
-//  ANIMALS
-// ══════════════════════════════════════════════════════════
-function renderAnimals(){
-  const l=document.getElementById("animalsList");
+// ══════════ FIGHT ══════════
+function renderFight(){
+  document.getElementById("myIco").textContent=ava();
+  document.getElementById("myFName").textContent=S.name;
+  document.getElementById("myFHp").textContent=`❤️ ${S.hp}`;
+  const l=document.getElementById("enemyList");
   l.innerHTML="";
-  const owned=Object.entries(S.animals).filter(([,v])=>v.count>0);
-  if(!owned.length){
-    l.innerHTML=`<div style="text-align:center;padding:50px 20px;color:rgba(255,255,255,0.5)"><div style="font-size:60px;margin-bottom:12px">🐾</div><div style="font-size:15px;font-weight:600">Нет животных<br><small>Купи в магазине!</small></div></div>`;
-    return;
-  }
-  owned.forEach(([k,v])=>{
-    const a=ANIMALS[k];
-    const since=ts()-(v.last||0);
-    const ready=since>=a.iv;
-    const left=Math.max(0,a.iv-since);
-    const pct=Math.min(100,(since/a.iv)*100);
+  ENEMIES.forEach(e=>{
+    const canFight=S.energy>=e.energy&&S.hp>0;
     const d=document.createElement("div");
     d.className="card";
     d.innerHTML=`<div class="card-row">
-      <span class="card-ico">${a.e}</span>
+      <span class="card-ico">${e.e}</span>
       <div class="card-inf">
-        <div class="card-name">${a.n} ×${v.count}</div>
-        <div class="card-sub">${a.pe} ${a.pn} · ${a.ps}🪙/шт.</div>
-        <div class="card-status ${ready?"status-ready":"status-wait"}">${ready?"✅ Готово к сбору!":"⏳ "+fmt(left)}</div>
-        <div class="prog-wrap" style="margin-top:6px"><div class="prog-fill" style="width:${pct}%"></div></div>
+        <div class="card-title">${e.n}</div>
+        <div class="card-sub">❤️${e.hp} · ⚔️${e.str} · 🛡️${e.def}</div>
+        <div class="card-extra">💰${e.reward.money} · ⭐${e.reward.xp} · 👑${e.reward.auth}</div>
       </div>
-      <button class="btn btn-green" ${ready?"":"disabled"} onclick="collectAnimal('${k}',this)">${ready?"Собрать":"⏳"}</button>
+      <button class="btn btn-red" ${canFight?"":"disabled"} onclick="startFight('${e.id}')">${canFight?`⚡${e.energy} Биться`:"❌"}</button>
     </div>`;
     l.appendChild(d);
   });
 }
 
-function collectAnimal(k,btn){
-  const a=ANIMALS[k];const v=S.animals[k];
-  const since=ts()-(v.last||0);
-  if(since<a.iv){toast("⏳ Ещё рано!");return}
-  const n=v.count;
-  S.inv[a.prod]=(S.inv[a.prod]||0)+n;
-  S.animals[k].last=ts();
-  xp(5*n);save();
-  toast(`✅ Собрал ${n}× ${a.pe} ${a.pn}!`);
-  floatTxt(btn,`+${n}${a.pe}`);
-  renderAnimals();checkAch();
+function startFight(eid){
+  const enemy=ENEMIES.find(e=>e.id===eid);
+  if(!enemy)return;
+  if(S.energy<enemy.energy){toast(`❌ Нужно ${enemy.energy} энергии!`);return}
+  if(S.hp<=0){toast("❌ Ты без сознания! Отдохни!");return}
+  S.energy-=enemy.energy;save();
+
+  // Set arena
+  document.getElementById("enemyIco").textContent=enemy.e;
+  document.getElementById("enemyFName").textContent=enemy.n;
+
+  // Simulate fight
+  const log=document.getElementById("fightLog");
+  log.innerHTML="";
+  let myHp=S.hp, enHp=enemy.hp;
+  const lines=[];
+  let round=1;
+
+  while(myHp>0&&enHp>0&&round<=20){
+    // My attack
+    const myDmg=Math.max(1,myAtk()-enemy.def+Math.floor(Math.random()*4)-1);
+    enHp=Math.max(0,enHp-myDmg);
+    lines.push(`<div class="log-line">Раунд ${round}: Ты бьёшь <span class="log-dmg">-${myDmg}</span> → ${enemy.n} [❤️${enHp}]</div>`);
+    if(enHp<=0)break;
+    // Enemy attack
+    const enDmg=Math.max(1,enemy.str-myDef()+Math.floor(Math.random()*3)-1);
+    myHp=Math.max(0,myHp-enDmg);
+    lines.push(`<div class="log-line">${enemy.n} бьёт <span class="log-dmg">-${enDmg}</span> → Ты [❤️${myHp}]</div>`);
+    round++;
+  }
+
+  const won=enHp<=0;
+  if(won){
+    lines.push(`<div class="log-line"><span class="log-win">🏆 ПОБЕДА! +💰${enemy.reward.money} +⭐${enemy.reward.xp} +👑${enemy.reward.auth}</span></div>`);
+    S.money+=enemy.reward.money;
+    S.stats.moneyEarned+=enemy.reward.money;
+    S.stats.wins++;S.auth+=enemy.reward.auth;
+    addXp(enemy.reward.xp);
+    toast(`🏆 Победил ${enemy.n}! +💰${enemy.reward.money}`);
+  } else {
+    lines.push(`<div class="log-line"><span style="color:#e94560">💀 ПОРАЖЕНИЕ...</span></div>`);
+    S.stats.losses++;
+    toast(`💀 Проиграл ${enemy.n}...`);
+  }
+  S.hp=Math.max(1,myHp);save();
+  log.innerHTML=lines.join("");
+  log.scrollTop=log.scrollHeight;
+  document.getElementById("myFHp").textContent=`❤️ ${S.hp}`;
+  document.getElementById("enemyFHp").textContent=`❤️ ${enHp}`;
+  checkQuests();hud();renderFight();
 }
 
-// ══════════════════════════════════════════════════════════
-//  SHOP
-// ══════════════════════════════════════════════════════════
-function renderShop(){
-  const l=document.getElementById("shopList");
-  l.innerHTML="";
-  Object.entries(ANIMALS).forEach(([k,a])=>{
-    const owned=(S.animals[k]?.count)||0;
+// ══════════ WORK ══════════
+function renderWork(){
+  const wl=document.getElementById("workList");
+  wl.innerHTML="";
+  WORKS.forEach(w=>{
+    const cd=S.workCds[w.id]||0;
+    const ready=ts()>=cd;
+    const left=Math.max(0,cd-ts());
+    const pct=ready?100:Math.max(0,100-(left/w.time*100));
+    const canWork=ready&&S.energy>=w.energy;
     const d=document.createElement("div");
-    d.className="shop-card";
-    d.innerHTML=`<span class="shop-ico">${a.e}</span>
-    <div class="shop-inf">
-      <div class="shop-name">${a.n}${owned?` <span style="color:#4CAF50;font-size:12px">(×${owned})</span>`:""}</div>
-      <div class="shop-desc">${a.pe} каждые ${fmt(a.iv)}<br>Продажа: ${a.ps}🪙/шт.</div>
-    </div>
-    <button class="btn btn-blue" onclick="buyAnimal('${k}',this)">${a.buy}🪙</button>`;
-    l.appendChild(d);
+    d.className="work-card";
+    d.innerHTML=`<div class="work-row">
+      <span class="work-ico">${w.e}</span>
+      <div class="work-inf">
+        <div class="work-name">${w.n}</div>
+        <div class="work-desc">${w.desc}</div>
+        <div class="work-reward">💰+${w.reward.money} · ⭐+${w.reward.xp} · ⚡${w.energy}</div>
+        ${!ready?`<div class="cooldown-bar"><div class="bar-wrap"><div class="bar-fill bar-energy" style="width:${pct}%"></div></div><div style="font-size:10px;color:#666;margin-top:2px">⏳ ${fmt(left)}</div></div>`:""}
+      </div>
+      <button class="btn btn-gold" ${canWork?"":"disabled"} onclick="doWork('${w.id}')">${canWork?"Работать":ready?"❌ Энергия":"⏳"}</button>
+    </div>`;
+    wl.appendChild(d);
+  });
+
+  // Quests
+  const ql=document.getElementById("questList");
+  ql.innerHTML="";
+  QUESTS.forEach(q=>{
+    const done=S.questDone[q.id];
+    const prog=S.questProgress[q.id]||0;
+    const pct=Math.min(100,prog/q.goal*100);
+    const canClaim=prog>=q.goal&&!done;
+    const d=document.createElement("div");
+    d.className="work-card";
+    d.innerHTML=`<div class="work-row">
+      <span class="work-ico">${q.e}</span>
+      <div class="work-inf">
+        <div class="work-name">${q.n} ${done?"✅":""}</div>
+        <div class="work-desc">${q.desc}</div>
+        <div class="work-reward">💰+${q.reward.money} · ⭐+${q.reward.xp} · 👑+${q.reward.auth}</div>
+        ${!done?`<div class="cooldown-bar"><div class="bar-wrap"><div class="bar-fill bar-xp" style="width:${pct}%"></div></div><div style="font-size:10px;color:#666;margin-top:2px">${prog}/${q.goal}</div></div>`:""}
+      </div>
+      ${canClaim?`<button class="btn btn-green" onclick="claimQuest('${q.id}')">Забрать</button>`:`<span style="font-size:10px;color:#444">${done?"Выполнено":""}</span>`}
+    </div>`;
+    ql.appendChild(d);
   });
 }
 
-function buyAnimal(k,btn){
-  const a=ANIMALS[k];
-  if(S.coins<a.buy){toast(`❌ Нужно ${a.buy}🪙`);return}
-  S.coins-=a.buy;
-  if(!S.animals[k])S.animals[k]={count:0,last:0};
-  S.animals[k].count++;
-  xp(20);save();
-  toast(`✅ Купил ${a.e} ${a.n}!`);
-  floatTxt(btn,`+${a.e}`);
-  renderShop();checkAch();
+function doWork(wid){
+  const w=WORKS.find(x=>x.id===wid);
+  if(!w)return;
+  if(S.energy<w.energy){toast(`❌ Нужно ${w.energy} энергии!`);return}
+  if(ts()<(S.workCds[w.id]||0)){toast("⏳ Работа на перезарядке!");return}
+  S.energy-=w.energy;
+  S.money+=w.reward.money;
+  S.stats.moneyEarned+=w.reward.money;
+  S.stats.works++;
+  S.workCds[w.id]=ts()+w.time;
+  addXp(w.reward.xp);
+  checkQuests();save();
+  toast(`✅ ${w.n} завершена! +💰${w.reward.money}`);
+  renderWork();hud();
 }
 
-function sellAll(){
-  const inv=S.inv;
-  if(!Object.keys(inv).length){toast("🎒 Склад пуст!");return}
-  const prices={};
-  Object.entries(CROPS).forEach(([k,c])=>prices[k]=c.sell);
-  Object.entries(ANIMALS).forEach(([,a])=>prices[a.prod]=a.ps);
-  let total=0;
-  Object.keys(inv).forEach(k=>total+=(prices[k]||0)*inv[k]);
-  S.inv={};S.coins+=total;S.stats.earned+=total;S.stats.sold++;
-  xp(Math.floor(total/5));save();
-  toast(`💰 Продано! +${total}🪙`);
-  hud();checkAch();
+function checkQuests(){
+  QUESTS.forEach(q=>{
+    if(S.questDone[q.id])return;
+    let prog=0;
+    if(q.type==="wins")prog=S.stats.wins;
+    if(q.type==="works")prog=S.stats.works;
+    if(q.type==="money_earned")prog=S.stats.moneyEarned;
+    if(q.type==="level")prog=S.level;
+    S.questProgress[q.id]=prog;
+  });
+  save();
 }
 
-// ══════════════════════════════════════════════════════════
-//  INVENTORY
-// ══════════════════════════════════════════════════════════
-function renderInv(){
-  const g=document.getElementById("invGrid");
-  const items=Object.entries(S.inv).filter(([,q])=>q>0);
-  if(!items.length){
-    g.innerHTML=`<div class="inv-empty"><span class="inv-empty-ico">🎒</span>Склад пуст<br><small>Собирай урожай!</small></div>`;
-    return;
-  }
-  const names={};const emojis={};const prices={};
-  Object.entries(CROPS).forEach(([k,c])=>{names[k]=c.n;emojis[k]=c.e;prices[k]=c.sell});
-  Object.entries(ANIMALS).forEach(([,a])=>{names[a.prod]=a.pn;emojis[a.prod]=a.pe;prices[a.prod]=a.ps});
-  g.innerHTML=items.map(([k,q])=>`
-    <div class="inv-card">
-      <div class="inv-ico">${emojis[k]||"📦"}</div>
-      <div class="inv-qty">${q}</div>
-      <div class="inv-name">${names[k]||k}</div>
-      <div class="inv-val">${(prices[k]||0)*q}🪙</div>
-    </div>`).join("");
+function claimQuest(qid){
+  const q=QUESTS.find(x=>x.id===qid);
+  if(!q||S.questDone[qid])return;
+  S.money+=q.reward.money;S.auth+=q.reward.auth;
+  S.stats.quests++;S.questDone[qid]=1;
+  addXp(q.reward.xp);save();
+  toast(`🎯 Задание выполнено! +💰${q.reward.money} +👑${q.reward.auth}`);
+  renderWork();
 }
 
-// ══════════════════════════════════════════════════════════
-//  PROFILE
-// ══════════════════════════════════════════════════════════
+// ══════════ SHOP ══════════
+function renderShop(){
+  const sw=document.getElementById("shopWeapons");
+  sw.innerHTML="";
+  WEAPONS.forEach(w=>{
+    const owned=S.weapon===w.id;
+    const d=document.createElement("div");
+    d.className="shop-item";
+    d.innerHTML=`<span class="shop-ico">${w.e}</span>
+    <div class="shop-inf">
+      <div class="shop-name">${w.n}</div>
+      <div class="shop-desc">${w.desc}</div>
+      ${owned?`<div class="shop-owned">✅ Экипировано</div>`:""}
+    </div>
+    ${owned?`<button class="btn btn-gray" disabled>Надето</button>`:w.price===0?`<span></span>`:`<button class="btn btn-gold" onclick="buyWeapon('${w.id}')">${w.price}💰</button>`}`;
+    sw.appendChild(d);
+  });
+
+  const sa=document.getElementById("shopArmor");
+  sa.innerHTML="";
+  ARMOR.forEach(a=>{
+    const owned=S.armor===a.id;
+    const d=document.createElement("div");
+    d.className="shop-item";
+    d.innerHTML=`<span class="shop-ico">${a.e}</span>
+    <div class="shop-inf">
+      <div class="shop-name">${a.n}</div>
+      <div class="shop-desc">${a.desc}</div>
+      ${owned?`<div class="shop-owned">✅ Экипировано</div>`:""}
+    </div>
+    ${owned?`<button class="btn btn-gray" disabled>Надето</button>`:a.price===0?`<span></span>`:`<button class="btn btn-gold" onclick="buyArmor('${a.id}')">${a.price}💰</button>`}`;
+    sa.appendChild(d);
+  });
+
+  const sm=document.getElementById("shopMeds");
+  sm.innerHTML="";
+  MEDS.forEach(m=>{
+    const d=document.createElement("div");
+    d.className="shop-item";
+    d.innerHTML=`<span class="shop-ico">${m.e}</span>
+    <div class="shop-inf">
+      <div class="shop-name">${m.n}</div>
+      <div class="shop-desc">${m.desc}</div>
+    </div>
+    <button class="btn btn-green" onclick="buyMed('${m.id}')">${m.price}💰</button>`;
+    sm.appendChild(d);
+  });
+}
+
+function buyWeapon(id){
+  const w=WEAPONS.find(x=>x.id===id);
+  if(!w||S.weapon===id)return;
+  if(S.money<w.price){toast(`❌ Нужно ${w.price}💰`);return}
+  S.money-=w.price;S.weapon=id;save();
+  toast(`✅ Купил ${w.n}!`);renderShop();hud();
+}
+function buyArmor(id){
+  const a=ARMOR.find(x=>x.id===id);
+  if(!a||S.armor===id)return;
+  if(S.money<a.price){toast(`❌ Нужно ${a.price}💰`);return}
+  S.money-=a.price;S.armor=id;save();
+  toast(`✅ Купил ${a.n}!`);renderShop();hud();
+}
+function buyMed(id){
+  const m=MEDS.find(x=>x.id===id);
+  if(!m)return;
+  if(S.money<m.price){toast(`❌ Нужно ${m.price}💰`);return}
+  if(S.hp>=S.maxHp){toast("❤️ Здоровье полное!");return}
+  S.money-=m.price;S.hp=Math.min(S.maxHp,S.hp+m.hp);save();
+  toast(`💊 Вылечился! +${m.hp} HP`);hud();
+}
+
+// ══════════ PROFILE ══════════
 function renderProfile(){
-  const u=window.Telegram?.WebApp?.initDataUnsafe?.user;
-  document.getElementById("profName").textContent=u?.first_name||"Фермер";
-  document.getElementById("profLvl").textContent=S.level;
-  const pct=Math.min(100,(S.xp/(S.level*100))*100);
-  document.getElementById("profXpFill").style.width=pct+"%";
+  document.getElementById("profAva").textContent=ava();
+  document.getElementById("profName").textContent=S.name;
+  document.getElementById("profRank").textContent=`${rank()} · Уровень ${S.level}`;
+  const pct=S.xp/(S.level*100)*100;
+  document.getElementById("profXp").style.width=pct+"%";
   document.getElementById("profXpLbl").textContent=`${S.xp} / ${S.level*100} опыта`;
-  document.getElementById("st1").textContent=S.coins+"🪙";
-  document.getElementById("st2").textContent=S.stats.harvested;
-  document.getElementById("st3").textContent=S.stats.earned+"🪙";
-  document.getElementById("st4").textContent=S.plots.length;
-  // achievements
-  const l=document.getElementById("achList");
-  l.innerHTML=ACHIEVEMENTS.map(a=>`
-    <div class="ach-card ${S.ach[a.id]?"done":""}">
-      <span class="ach-ico">${a.e}</span>
-      <div class="ach-inf">
-        <div class="ach-name">${a.n} ${S.ach[a.id]?"✅":""}</div>
-        <div class="ach-desc">${a.desc}</div>
+  document.getElementById("p1").textContent=S.money;
+  document.getElementById("p2").textContent=S.stats.wins;
+  document.getElementById("p3").textContent=S.stats.losses;
+  document.getElementById("p4").textContent=S.auth;
+  document.getElementById("p5").textContent=S.stats.works;
+  document.getElementById("p6").textContent=S.stats.quests;
+
+  // Rating
+  const rl=document.getElementById("ratingList");
+  const myEntry={name:S.name,auth:S.auth,lvl:S.level,e:ava(),isMe:true};
+  const all=[...S.rating,myEntry].sort((a,b)=>b.auth-a.auth);
+  rl.innerHTML=all.map((r,i)=>`
+    <div class="rating-item" ${r.isMe?'style="border-color:#e94560"':""}>
+      <div class="rating-pos">${i+1}</div>
+      <span class="rating-ico">${r.e||"😤"}</span>
+      <div class="rating-inf">
+        <div class="rating-name">${r.name}${r.isMe?" (Ты)":""}</div>
+        <div class="rating-sub">Уровень ${r.lvl||1}</div>
       </div>
+      <div class="rating-auth">👑${r.auth}</div>
     </div>`).join("");
 }
 
-// ══════════════════════════════════════════════════════════
-//  MODAL
-// ══════════════════════════════════════════════════════════
-function openModal(){document.getElementById("modalBg").classList.add("open")}
-function closeModal(){document.getElementById("modalBg").classList.remove("open")}
-function bgClose(e){if(e.target===document.getElementById("modalBg"))closeModal()}
+// ══════════ MODAL ══════════
+function openModal(){document.getElementById("mbg").classList.add("open")}
+function closeModal(){document.getElementById("mbg").classList.remove("open")}
+function bgc(e){if(e.target===document.getElementById("mbg"))closeModal()}
 
-// ══════════════════════════════════════════════════════════
-//  TOAST & FLOAT
-// ══════════════════════════════════════════════════════════
-let toastT;
+// ══════════ TOAST ══════════
+let tt;
 function toast(msg){
   const t=document.getElementById("toast");
   t.textContent=msg;t.classList.add("show");
-  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2400);
+  clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2500);
 }
 
-function floatTxt(el,txt){
-  const r=el.getBoundingClientRect?.()||{left:window.innerWidth/2,top:window.innerHeight/2,width:0,height:0};
-  const d=document.createElement("div");
-  d.className="float-txt";d.textContent=txt;
-  d.style.left=(r.left+r.width/2-20)+"px";
-  d.style.top=(r.top+r.height/2)+"px";
-  document.body.appendChild(d);
-  setTimeout(()=>d.remove(),1300);
-}
+// ══════════ RENDERS MAP ══════════
+const renders={cell:renderCell,fight:renderFight,work:renderWork,shop:renderShop,profile:renderProfile};
 
-// ══════════════════════════════════════════════════════════
-//  CLOUDS
-// ══════════════════════════════════════════════════════════
-function makeClouds(){
-  const scene=document.getElementById("scene");
-  for(let i=0;i<5;i++){
-    const c=document.createElement("div");
-    c.className="cloud";
-    const w=80+Math.random()*100;
-    const h=w*0.4;
-    c.style.cssText=`width:${w}px;height:${h}px;top:${5+Math.random()*30}%;left:${Math.random()*100}%;animation-duration:${30+Math.random()*40}s;animation-delay:-${Math.random()*40}s`;
-    scene.appendChild(c);
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════
+// ══════════ INIT ══════════
 try{window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand()}catch(e){}
-makeClouds();
-hud();
-renderField();
-
-setInterval(()=>{
-  if(cur==="field")renderField();
-  if(cur==="animals")renderAnimals();
-  hud();
-},2000);
+const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;
+if(tgUser?.first_name&&S.name==="Зэк")S.name=tgUser.first_name;
+save();hud();renderCell();
+setInterval(()=>{regenEnergy();if(cur==="cell")renderCell();if(cur==="work")renderWork();hud()},5000);
 </script>
 </body>
 </html>
